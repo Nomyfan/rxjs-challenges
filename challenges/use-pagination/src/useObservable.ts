@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { Observable } from "rxjs";
 
 function useObservable<T, O extends Observable<T>>(source$: O) {
@@ -6,6 +6,8 @@ function useObservable<T, O extends Observable<T>>(source$: O) {
   if (!ref.current) {
     ref.current = source$;
   }
+
+  useEffect(() => () => (ref.current = undefined), []);
 
   return ref.current!;
 }
