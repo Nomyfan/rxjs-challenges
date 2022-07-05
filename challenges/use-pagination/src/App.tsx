@@ -3,7 +3,7 @@ import { usePagination } from "./usePagination";
 import { useObservable } from "./useObservable";
 
 let count = 0;
-const total = 10;
+let total = 10;
 
 function fetcher(params: {
   name: string;
@@ -15,7 +15,7 @@ function fetcher(params: {
   total: number;
   message: string;
 }> {
-  console.log("fetcher");
+  console.log("params", params);
   const shouldResolve = count > 0;
   count++;
   return new Promise((res, rej) => {
@@ -24,7 +24,7 @@ function fetcher(params: {
         rej("Error from mock server");
       }
       res({
-        list: [...new Array(5)].map(() => {
+        list: [...new Array(params.size)].map(() => {
           return { name: params.name, age: params.age };
         }),
         total,
@@ -43,7 +43,7 @@ function App() {
   );
   const retry$ = useObservable(new Subject());
   const { loading, data, error, loadMore, reload } = usePagination({
-    pageSize: 0,
+    pageSize: 5,
     fetcher,
     params$,
     retryConfig: {
@@ -82,6 +82,11 @@ function App() {
           </div>
         );
       })}
+      {data && (
+        <div>
+          {data.list.length}/{data.total}
+        </div>
+      )}
       {data && data.list.length < data.total && !loading && (
         <button
           onClick={() => {
@@ -92,9 +97,16 @@ function App() {
         </button>
       )}
       {data && loading && <div>Loading more...</div>}
-      {data && data.list.length === data.total && <div>--END--</div>}
-      {data && data.list.length === data.total && (
-        <button onClick={() => reload()}>Reload</button>
+      {data && data.list.length >= data.total && <div>--END--</div>}
+      {data && data.list.length >= data.total && (
+        <button
+          onClick={() => {
+            reload(15);
+            total = 45;
+          }}
+        >
+          Reload
+        </button>
       )}
     </div>
   );
