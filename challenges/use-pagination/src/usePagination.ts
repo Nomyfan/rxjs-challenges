@@ -71,10 +71,13 @@ function usePagination<
           return { ...params, ...pagination };
         }),
         tap((params) => {
-          console.log("params", params);
+          setState((st) => ({
+            ...st,
+            loading: true,
+            data: params.page === 0 ? undefined : st.data,
+          }));
         }),
         switchMap((params) => {
-          setState((st) => ({ ...st, loading: true }));
           return from(fetcher(params));
         }),
         retry({

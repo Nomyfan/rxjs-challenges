@@ -42,7 +42,7 @@ function App() {
     })
   );
   const retry$ = useObservable(new Subject());
-  const { loading, data, error, loadMore } = usePagination({
+  const { loading, data, error, loadMore, reload } = usePagination({
     pageSize: 0,
     fetcher,
     params$,
@@ -93,6 +93,9 @@ function App() {
       )}
       {data && loading && <div>Loading more...</div>}
       {data && data.list.length === data.total && <div>--END--</div>}
+      {data && data.list.length === data.total && (
+        <button onClick={() => reload()}>Reload</button>
+      )}
     </div>
   );
 }
