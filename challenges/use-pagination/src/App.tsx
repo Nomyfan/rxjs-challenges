@@ -30,7 +30,7 @@ function fetcher(params: {
         total,
         message: "ok",
       });
-    }, 3000);
+    }, 1000);
   });
 }
 

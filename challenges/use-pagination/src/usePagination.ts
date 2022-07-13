@@ -62,23 +62,29 @@ function usePagination<
   });
 
   useEffect(() => {
-    const sub = combineLatest([params$, pagination$])
+    const paramsSub = params$.subscribe((params) => {
+      pagination$.next({ ...pagination$.getValue(), page: 0, params });
+    });
+    const dataSub = pagination$
       .pipe(
-        filter(([, pagination]) => {
+        filter((pagination) => {
           return !pagination.end;
         }),
-        map(([params, pagination]) => {
-          return { ...params, ...pagination };
-        }),
-        tap((params) => {
+        tap((pagination) => {
           setState((st) => ({
             ...st,
             loading: true,
-            data: params.page === 0 ? undefined : st.data,
+            data: pagination.page === 0 ? undefined : st.data,
           }));
         }),
-        switchMap((params) => {
-          return from(fetcher(params));
+        switchMap((pagination) => {
+          return from(
+            fetcher({
+              page: pagination.page,
+              size: pagination.size,
+              ...pagination.params!,
+            })
+          );
         }),
         retry({
           ...retryConfig,
@@ -115,12 +121,16 @@ function usePagination<
         next: (data) => {
           console.log("onnext");
           setState((st) => {
+            const newList = [...(st?.data?.list ?? []), ...data.list];
+            if (newList.length === data.total) {
+              pagination$.next({ ...pagination$.getValue(), end: true });
+            }
             return {
               loading: false,
               error: undefined,
               data: {
                 ...data,
-                list: [...(st?.data?.list ?? []), ...data.list],
+                list: newList,
                 total: data.total,
               },
             };
@@ -134,7 +144,10 @@ function usePagination<
         },
       });
 
-    return () => sub.unsubscribe();
+    return () => {
+      paramsSub.unsubscribe();
+      dataSub.unsubscribe();
+    };
   }, [params$, pagination$]);
 
   const loadMore = useCallback(() => {
@@ -151,6 +164,7 @@ function usePagination<
   const reload = useCallback((pageSize?: number) => {
     const currentPagination = pagination$.getValue();
     pagination$.next({
+      ...pagination$.getValue(),
       page: 0,
       size: pageSize ?? currentPagination.size,
       end: false,
